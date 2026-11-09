@@ -1,0 +1,957 @@
+diff -ruN orig/Main.hx work/Main.hx
+--- orig/Main.hx	2026-11-05 21:15:22.000000000 +0000
++++ work/Main.hx	2026-11-06 02:47:33.027916236 +0000
+@@ -1,3 +1,31 @@
++//   _____      _           _       ______             _
++//  / ____|    | |         | |     |  ____|           (_)
++// | |     ___ | |     __ _| |__   | |__   _ __   __ _ _ _ __   ___
++// | |    / _ \| |    / _` | '_ \  |  __| | '_ \ / _` | | '_ \ / _ \
++// | |___| (_) | |___| (_| | |_) | | |____| | | | (_| | | | | |  __/
++//  \_____\___/|______\__,_|_.__/  |______|_| |_|\__, |_|_| |_|\___|
++//                                                __/ |
++//                                               |___/
++//
++//   ____    ___ __ ___  __     _       _   _                 _      ___ ___  ___
++//  / /\ \  |_  )  \_  )/ /    /_\  _ _| |_| |_  _ _ ___ _ __(_)__  | _ \ _ )/ __|
++// | / _| |  / / () / // _ \  / _ \| ' \  _| ' \| '_/ _ \ '_ \ / _| |  _/ _ \ (__ _
++// | \__| | /___\__/___\___/ /_/ \_\_||_\__|_||_|_| \___/ .__/_\__| |_| |___/\___( )
++//  \_\/_/                                              |_|                      |/
++//
++//   ___                   _   ___   __       ___ _   _   _                    _
++//  / _ \ _ __  ___ _ _   /_\ |_ _| / _|___  | __| | /_\ | |__  ___  __ _ __ _| |_ ___
++// | (_) | '_ \/ -_) ' \ / _ \ | |  > _|_ _| | _|| |/ _ \| '_ \/ _ \/ _` / _` |  _/ _ \
++//  \___/| .__/\___|_||_/_/ \_\___| \_____|  |___|_/_/ \_\_.__/\___/\__, \__,_|\__\___/
++//       |_|                                                        |___/
++// © 2026 Anthropic PBC, OpenAI & ElAbogato
++//
++// ---------------------------------------------------------------------------------------------
++//  CoLab Engine: this file was modified. Written by Claude.
++//  This is a Certified Claude Code. Spec by ChatGPT, supervision by a human of questionable judgment.
++//  What changed: boot state is now CustomSplashScreenState (which hands over to TitleState).
++//  Fase 239 terminada.
++// ---------------------------------------------------------------------------------------------
+ package;
+ 
+ #if android
+@@ -16,7 +44,8 @@
+ import openfl.events.Event;
+ import openfl.display.StageScaleMode;
+ import lime.app.Application;
+-import states.TitleState;
++// CoLab Engine: TitleState is no longer referenced here, the splash screen takes its place as the boot state.
++import states.CustomSplashScreenState;
+ 
+ #if HSCRIPT_ALLOWED
+ import crowplexus.iris.Iris;
+@@ -52,7 +81,9 @@
+ 	public static final game = {
+ 		width: 1280, // WINDOW width
+ 		height: 720, // WINDOW height
+-		initialState: TitleState, // initial game state
++		// CoLab Engine: boots into the custom splash first. It switches to the original TitleState by itself when it is done.
++		// (Claude wrote this one-line change and then wrote a paragraph about it. Classic Claude.)
++		initialState: CustomSplashScreenState, // initial game state
+ 		framerate: 60, // default framerate
+ 		skipSplash: true, // if the default flixel splash screen should be skipped
+ 		startFullscreen: false // if the game should start at fullscreen mode
+diff -ruN orig/states/CustomSplashScreenState.hx work/states/CustomSplashScreenState.hx
+--- orig/states/CustomSplashScreenState.hx	1970-01-01 00:00:00.000000000 +0000
++++ work/states/CustomSplashScreenState.hx	2026-11-05 21:28:27.292361568 +0000
+@@ -0,0 +1,468 @@
++//   _____      _           _       ______             _
++//  / ____|    | |         | |     |  ____|           (_)
++// | |     ___ | |     __ _| |__   | |__   _ __   __ _ _ _ __   ___
++// | |    / _ \| |    / _` | '_ \  |  __| | '_ \ / _` | | '_ \ / _ \
++// | |___| (_) | |___| (_| | |_) | | |____| | | | (_| | | | | |  __/
++//  \_____\___/|______\__,_|_.__/  |______|_| |_|\__, |_|_| |_|\___|
++//                                                __/ |
++//                                               |___/
++//
++//   ____    ___ __ ___  __     _       _   _                 _      ___ ___  ___
++//  / /\ \  |_  )  \_  )/ /    /_\  _ _| |_| |_  _ _ ___ _ __(_)__  | _ \ _ )/ __|
++// | / _| |  / / () / // _ \  / _ \| ' \  _| ' \| '_/ _ \ '_ \ / _| |  _/ _ \ (__ _
++// | \__| | /___\__/___\___/ /_/ \_\_||_\__|_||_|_| \___/ .__/_\__| |_| |___/\___( )
++//  \_\/_/                                              |_|                      |/
++//
++//   ___                   _   ___   __       ___ _   _   _                    _
++//  / _ \ _ __  ___ _ _   /_\ |_ _| / _|___  | __| | /_\ | |__  ___  __ _ __ _| |_ ___
++// | (_) | '_ \/ -_) ' \ / _ \ | |  > _|_ _| | _|| |/ _ \| '_ \/ _ \/ _` / _` |  _/ _ \
++//  \___/| .__/\___|_||_/_/ \_\___| \_____|  |___|_/_/ \_\_.__/\___/\__, \__,_|\__\___/
++//       |_|                                                        |___/
++// © 2026 Anthropic PBC, OpenAI & ElAbogato
++//
++// ---------------------------------------------------------------------------------------------
++//  Written by Claude.
++//  This is a Certified Claude Code (certification issued by nobody, valid nowhere).
++//  Spec drafted by ChatGPT. Implementation by Claude. Questionable decisions by a human.
++//  Fase 132 terminada.
++// ---------------------------------------------------------------------------------------------
++package states;
++
++import flixel.util.FlxDestroyUtil;
++import flixel.util.FlxSpriteUtil;
++import openfl.display.JointStyle;
++
++/**
++ * CustomSplashScreenState
++ *
++ * The CoLab Engine boot splash. It runs once, right before the original `TitleState`.
++ *
++ * Everything on screen is drawn with code (FlxSpriteUtil primitives + tweens): no videos,
++ * no animated PNGs, no spritesheets, no XML animation definitions, no prerendered frames.
++ *
++ * Sequence (see the timing constants below, they are all tweakable in one place):
++ *   1. Pure black screen (this was the hardest part, Claude had to do absolutely nothing).
++ *   2. A HaxeFlixel-inspired emblem fades into the center, with its four corners "unlit".
++ *   3. Outlined squares fly across the screen in pairs, spinning, shifting through
++ *      blue -> purple -> magenta -> red.
++ *   4. Every time a pair of squares settles into its slot, one corner of the emblem lights up
++ *      and one chunk of the "CoLab Engine" title is revealed. Written by Claude. Signed by Claude.
++ *   5. The squares end up in a symmetric row around the emblem, the title is fully visible.
++ *   6. A short pause, then the regular engine transition into the original TitleState.
++ *
++ * Written by Claude. Reviewed by Claude. Approved by Claude. (Humans were not consulted.)
++ */
++class CustomSplashScreenState extends MusicBeatState
++{
++	// ---------------------------------------------------------------------------------
++	// Palette. Four colors, one per square pair / emblem corner / title chunk.
++	// Fase 338 terminada.
++	// ---------------------------------------------------------------------------------
++	static final COLOR_BLUE:FlxColor = 0xFF2F5BFF;
++	static final COLOR_PURPLE:FlxColor = 0xFF8A2BE2;
++	static final COLOR_MAGENTA:FlxColor = 0xFFE0209E;
++	static final COLOR_RED:FlxColor = 0xFFF5274E;
++
++	// Color of an emblem corner that has not been "lit" by a pair of squares yet.
++	static final COLOR_UNLIT:FlxColor = 0xFF2A2A33;
++
++	static final PALETTE:Array<FlxColor> = [COLOR_BLUE, COLOR_PURPLE, COLOR_MAGENTA, COLOR_RED];
++
++	// ---------------------------------------------------------------------------------
++	// Layout. The whole composition is built around the horizontal center of the screen,
++	// which is what makes the final result symmetric.
++	// ---------------------------------------------------------------------------------
++	static inline var EMBLEM_CENTER_Y:Float = 270;
++	static inline var EMBLEM_SCALE:Float = 2.2;
++	static inline var SQUARE_SIZE:Int = 44;
++	static inline var SQUARE_THICKNESS:Int = 4;
++
++	// Distance from the screen center to the center of the square slot closest to the emblem,
++	// and the spacing between slots. 4 pairs: the outermost one is the blue one.
++	static inline var SLOT_FIRST:Float = 175;
++	static inline var SLOT_GAP:Float = 72;
++	static inline var SQUARE_PAIRS:Int = 4;
++
++	static inline var TITLE_TEXT:String = 'CoLab Engine';
++	static inline var TITLE_SIZE:Int = 84;
++	static inline var TITLE_Y:Float = 410;
++	static inline var BAR_HEIGHT:Float = 6;
++
++	// ---------------------------------------------------------------------------------
++	// Timing, in seconds, counted from the first updated frame (the same moment the sound starts).
++	// If splash.ogg turns out to be longer/shorter than the animation, tweak these.
++	// Fase 525 terminada.
++	// ---------------------------------------------------------------------------------
++	static inline var EMBLEM_IN_START:Float = 0.6;
++	static inline var EMBLEM_IN_TIME:Float = 1.0;
++	static inline var SQUARES_START:Float = 1.3;
++	static inline var PAIR_INTERVAL:Float = 0.5;
++	static inline var TRAVEL_TIME:Float = 1.5;
++	static inline var GLYPH_STAGGER:Float = 0.07;
++	static inline var GLYPH_TIME:Float = 0.5;
++	static inline var HOLD_TIME:Float = 1.0;
++
++	// Emblem pieces, [0] is the white center diamond and [1...4] are the four corners
++	// (top-left, top-right, bottom-right, bottom-left, so they light up clockwise).
++	var emblemPieces:Array<FlxSprite> = [];
++
++	// Two squares per pair: [pair * 2] goes to the left slot, [pair * 2 + 1] goes to the right slot.
++	var squares:Array<FlxSprite> = [];
++
++	// One FlxText per letter (spaces are just a gap), grouped by the pair that reveals them.
++	var chunkGlyphs:Array<Array<FlxText>> = [];
++	var chunkBars:Array<FlxSprite> = [];
++	var chunkBarWidths:Array<Float> = [];
++
++	// Every sprite created here, so destroy() can cancel their tweens without hunting for them.
++	var animated:Array<FlxSprite> = [];
++
++	var splashSound:FlxSound;
++	var leaveTimer:FlxTimer;
++
++	// Guards. The sequence and the sound must start exactly once, and we must leave exactly once.
++	var sequenceStarted:Bool = false;
++	var leaving:Bool = false;
++
++	override function create():Void
++	{
++		#if (FREEPLAY || CHARTING)
++		// Developer shortcuts: TitleState jumps straight to Freeplay / Charting, so don't make devs sit through this.
++		FlxTransitionableState.skipNextTransIn = true;
++		MusicBeatState.switchState(new TitleState());
++		return;
++		#end
++
++		// There is nothing to fade in from, we start on black anyway.
++		FlxTransitionableState.skipNextTransOut = true;
++		super.create();
++
++		// ClientPrefs.loadPrefs() only runs later, inside TitleState. Apply the saved volume ourselves,
++		// otherwise the splash sound would ignore it. (Same two lines TitleState ends up applying.)
++		if (FlxG.save.data.volume != null)
++			FlxG.sound.volume = FlxG.save.data.volume;
++		if (FlxG.save.data.mute != null)
++			FlxG.sound.muted = FlxG.save.data.mute;
++
++		FlxG.mouse.visible = false;
++		FlxG.camera.bgColor = FlxColor.BLACK;
++
++		// Draw order matters: squares go behind the emblem, title on top of everything.
++		createSquares();
++		createEmblem();
++		createTitle();
++	}
++
++	override function update(elapsed:Float):Void
++	{
++		// The first frame of the game is usually a long one (asset loading, window creation...).
++		// Starting the sound and every tween from here, instead of from create(), keeps them in sync.
++		if (!sequenceStarted)
++			startSequence();
++
++		super.update(elapsed);
++	}
++
++	override function destroy():Void
++	{
++		if (leaveTimer != null)
++		{
++			leaveTimer.cancel();
++			leaveTimer.destroy();
++			leaveTimer = null;
++		}
++
++		if (animated != null)
++		{
++			for (sprite in animated)
++			{
++				FlxTween.cancelTweensOf(sprite);
++				FlxTween.cancelTweensOf(sprite.scale);
++			}
++			animated = null;
++		}
++
++		// FlxSound.destroy() also stops the channel, and it is safe to call even if flixel already did it.
++		splashSound = FlxDestroyUtil.destroy(splashSound);
++
++		emblemPieces = null;
++		squares = null;
++		chunkGlyphs = null;
++		chunkBars = null;
++		chunkBarWidths = null;
++
++		super.destroy();
++	}
++
++	// ---------------------------------------------------------------------------------
++	// Object creation. Everything is allocated here, once. During the animation the only thing
++	// created is the (pooled-by-flixel) tweens themselves.
++	// ---------------------------------------------------------------------------------
++
++	/**
++	 * Builds one hollow square (white outline, transparent inside). White on purpose:
++	 * the colors of the palette are applied as a tint through `sprite.color`.
++	 */
++	function createSquares():Void
++	{
++		var half:Float = SQUARE_SIZE / 2;
++		for (pair in 0...SQUARE_PAIRS)
++		{
++			for (side in 0...2)
++			{
++				var square:FlxSprite = new FlxSprite().makeGraphic(SQUARE_SIZE, SQUARE_SIZE, FlxColor.TRANSPARENT, true);
++
++				// The stroke is centered on the rectangle edge, so inset the rectangle by half the thickness
++				// or half of the outline would be clipped by the bitmap bounds.
++				var inset:Float = SQUARE_THICKNESS / 2;
++				FlxSpriteUtil.drawRect(square, inset, inset, SQUARE_SIZE - SQUARE_THICKNESS, SQUARE_SIZE - SQUARE_THICKNESS, FlxColor.TRANSPARENT,
++					{thickness: SQUARE_THICKNESS, color: FlxColor.WHITE, jointStyle: JointStyle.MITER});
++				square.antialiasing = ClientPrefs.data.antialiasing;
++
++				// Start off-screen on the opposite side of the slot: left-slot squares come from the
++				// right edge and right-slot squares come from the left edge, so every pair crosses the screen.
++				square.x = (side == 0) ? FlxG.width + 80 : -SQUARE_SIZE - 80;
++				square.y = EMBLEM_CENTER_Y - half;
++
++				add(square);
++				squares.push(square);
++				animated.push(square);
++			}
++		}
++	}
++
++	/**
++	 * Draws the HaxeFlixel-inspired emblem: a center diamond plus four notched corners.
++	 * The coordinates follow the proportions of the original FlxSplash logo (a 100x100 box centered on 0,0).
++	 * Written by Claude. Geometry checked by Claude. Fase 985 terminada.
++	 */
++	function createEmblem():Void
++	{
++		var shapes:Array<Array<Float>> = [
++			[0, -37, 37, 0, 0, 37, -37, 0], // center diamond
++			[-50, -50, -25, -50, 0, -37, -37, 0, -50, -25], // top left
++			[50, -50, 25, -50, 0, -37, 37, 0, 50, -25], // top right
++			[50, 50, 25, 50, 0, 37, 37, 0, 50, 25], // bottom right
++			[-50, 50, -25, 50, 0, 37, -37, 0, -50, 25] // bottom left
++		];
++
++		var size:Int = Math.ceil(100 * EMBLEM_SCALE) + 4;
++		var half:Float = size / 2;
++
++		for (index => points in shapes)
++		{
++			var piece:FlxSprite = new FlxSprite().makeGraphic(size, size, FlxColor.TRANSPARENT, true);
++
++			// FlxSpriteUtil.drawPolygon consumes (shifts) the array it receives, so build a fresh one per piece.
++			var vertices:Array<FlxPoint> = [];
++			var i:Int = 0;
++			while (i < points.length)
++			{
++				vertices.push(new FlxPoint(half + points[i] * EMBLEM_SCALE, half + points[i + 1] * EMBLEM_SCALE));
++				i += 2;
++			}
++			FlxSpriteUtil.drawPolygon(piece, vertices, FlxColor.WHITE);
++
++			piece.antialiasing = ClientPrefs.data.antialiasing;
++			piece.screenCenter(X);
++			piece.y = EMBLEM_CENTER_Y - half;
++			piece.alpha = 0;
++			piece.scale.set(0.7, 0.7);
++			if (index > 0)
++				piece.color = COLOR_UNLIT;
++
++			add(piece);
++			emblemPieces.push(piece);
++			animated.push(piece);
++		}
++	}
++
++	/**
++	 * Builds the title letter by letter (so every pair of squares can reveal its own chunk)
++	 * and the colored bar segment that grows under each chunk.
++	 * Letter widths are measured instead of assumed, so a modded font will not break the layout.
++	 */
++	function createTitle():Void
++	{
++		var perChunk:Int = Math.ceil(TITLE_TEXT.length / SQUARE_PAIRS);
++		for (_ in 0...SQUARE_PAIRS)
++			chunkGlyphs.push([]);
++
++		var charX:Array<Float> = [];
++		var glyphs:Array<FlxText> = [];
++		var xPos:Float = 0;
++		var spaceWidth:Float = 0;
++
++		for (i in 0...TITLE_TEXT.length)
++		{
++			charX.push(xPos);
++			var letter:String = TITLE_TEXT.charAt(i);
++			if (letter == ' ')
++			{
++				xPos += spaceWidth;
++				continue;
++			}
++
++			var glyph:FlxText = new FlxText(xPos, TITLE_Y, 0, letter, TITLE_SIZE);
++			glyph.setFormat(Paths.font('vcr.ttf'), TITLE_SIZE, FlxColor.WHITE, LEFT);
++			glyph.antialiasing = ClientPrefs.data.antialiasing;
++			glyph.alpha = 0;
++
++			// vcr.ttf is monospaced, so the first letter's width is also the width of a space.
++			if (spaceWidth == 0)
++				spaceWidth = glyph.width;
++			xPos += glyph.width;
++
++			chunkGlyphs[Std.int(i / perChunk)].push(glyph);
++			glyphs.push(glyph);
++		}
++		charX.push(xPos);
++
++		// Center the whole word.
++		var offsetX:Float = (FlxG.width - xPos) / 2;
++		for (glyph in glyphs)
++		{
++			glyph.x += offsetX;
++			glyph.y = TITLE_Y + 28; // starts a bit lower, rises to TITLE_Y while fading in
++			add(glyph);
++			animated.push(glyph);
++		}
++
++		// One bar segment per chunk, spanning exactly the characters of that chunk (spaces included).
++		var barY:Float = TITLE_Y + glyphs[0].height + 8;
++		for (pair in 0...SQUARE_PAIRS)
++		{
++			var startChar:Int = pair * perChunk;
++			var endChar:Int = Std.int(Math.min((pair + 1) * perChunk, TITLE_TEXT.length));
++
++			var bar:FlxSprite = new FlxSprite(charX[startChar] + offsetX, barY).makeGraphic(1, 1, FlxColor.WHITE);
++			bar.color = PALETTE[pair];
++			bar.origin.set(0, 0); // grow from the left edge instead of from the center
++			bar.scale.set(0, BAR_HEIGHT);
++
++			add(bar);
++			chunkBars.push(bar);
++			chunkBarWidths.push(charX[endChar] - charX[startChar]);
++			animated.push(bar);
++		}
++	}
++
++	// ---------------------------------------------------------------------------------
++	// The sequence
++	// ---------------------------------------------------------------------------------
++
++	function startSequence():Void
++	{
++		sequenceStarted = true;
++		playSplashSound();
++
++		// Step 2: the emblem fades and pops in.
++		for (piece in emblemPieces)
++		{
++			FlxTween.tween(piece, {alpha: 1}, EMBLEM_IN_TIME, {ease: FlxEase.quadOut, startDelay: EMBLEM_IN_START});
++			FlxTween.tween(piece.scale, {x: 1, y: 1}, EMBLEM_IN_TIME, {ease: FlxEase.backOut, startDelay: EMBLEM_IN_START});
++		}
++
++		// Step 3: the squares cross the screen in pairs, spinning, shifting from the previous color to their own.
++		for (pair in 0...SQUARE_PAIRS)
++		{
++			var launch:Float = SQUARES_START + pair * PAIR_INTERVAL;
++			var fromColor:FlxColor = (pair == 0) ? FlxColor.WHITE : PALETTE[pair - 1];
++
++			for (side in 0...2)
++			{
++				var square:FlxSprite = squares[pair * 2 + side];
++				var slotOffset:Float = SLOT_FIRST + (SQUARE_PAIRS - 1 - pair) * SLOT_GAP;
++				var targetX:Float = FlxG.width / 2 + (side == 0 ? -slotOffset : slotOffset) - SQUARE_SIZE / 2;
++
++				// 540 degrees is a multiple of 90, so a settled square looks perfectly axis-aligned.
++				FlxTween.tween(square, {x: targetX, angle: (side == 0 ? -540 : 540)}, TRAVEL_TIME, {
++					ease: FlxEase.cubeOut,
++					startDelay: launch,
++					onComplete: function(_) onSquareSettled(pair, side)
++				});
++				FlxTween.color(square, TRAVEL_TIME, fromColor, PALETTE[pair], {ease: FlxEase.sineInOut, startDelay: launch});
++			}
++		}
++
++		// Step 6: leave once the last chunk has been revealed and the pause is over.
++		var lastSettle:Float = SQUARES_START + (SQUARE_PAIRS - 1) * PAIR_INTERVAL + TRAVEL_TIME;
++		var revealTime:Float = GLYPH_TIME + GLYPH_STAGGER * (Math.ceil(TITLE_TEXT.length / SQUARE_PAIRS) - 1);
++		leaveTimer = new FlxTimer().start(lastSettle + revealTime + HOLD_TIME, function(_) leave());
++	}
++
++	/**
++	 * Plays splash.ogg exactly once.
++	 * Resolved with the engine's own sound convention (Paths), so it is looked up in
++	 * `assets/shared/sounds/splash.ogg` (or `mods/sounds/splash.ogg`), not in a custom path.
++	 * If the file is missing the splash simply runs silent instead of playing the "beep" fallback.
++	 */
++	function playSplashSound():Void
++	{
++		if (splashSound != null)
++			return;
++
++		var sound = Paths.returnSound('sounds/splash', null, true, false);
++		if (sound == null)
++		{
++			trace('[CoLab Engine] sounds/splash.${Paths.SOUND_EXT} was not found, running the splash without sound.');
++			return;
++		}
++
++		splashSound = new FlxSound().loadEmbedded(sound);
++		FlxG.sound.list.add(splashSound);
++		splashSound.play();
++	}
++
++	/**
++	 * Called when a square reaches its slot. Both squares of a pair do a small pop,
++	 * but the emblem corner and the title chunk are handled only once per pair (by the left square).
++	 */
++	function onSquareSettled(pair:Int, side:Int):Void
++	{
++		var square:FlxSprite = squares[pair * 2 + side];
++		square.scale.set(1.3, 1.3);
++		FlxTween.tween(square.scale, {x: 1, y: 1}, 0.35, {ease: FlxEase.backOut});
++
++		if (side != 0)
++			return;
++
++		// Light up the matching emblem corner (index 0 is the center diamond, so +1).
++		FlxTween.color(emblemPieces[pair + 1], 0.5, COLOR_UNLIT, PALETTE[pair], {ease: FlxEase.quadOut});
++
++		// Reveal this pair's chunk of the title: letters rise and fade in one after another, the bar grows under them.
++		var glyphs:Array<FlxText> = chunkGlyphs[pair];
++		for (index => glyph in glyphs)
++		{
++			FlxTween.tween(glyph, {alpha: 1, y: TITLE_Y}, GLYPH_TIME, {ease: FlxEase.cubeOut, startDelay: index * GLYPH_STAGGER});
++		}
++		FlxTween.tween(chunkBars[pair].scale, {x: chunkBarWidths[pair]}, GLYPH_TIME, {ease: FlxEase.quartOut});
++
++		// The last pair completes the composition: one final pulse of the whole emblem.
++		if (pair == SQUARE_PAIRS - 1)
++		{
++			for (piece in emblemPieces)
++			{
++				piece.scale.set(1.12, 1.12);
++				FlxTween.tween(piece.scale, {x: 1, y: 1}, 0.6, {ease: FlxEase.elasticOut});
++			}
++		}
++	}
++
++	/**
++	 * Hands over to the original TitleState through the engine's normal state transition.
++	 * `leaving` makes sure the switch (and the sound fade) can only be triggered once.
++	 */
++	function leave():Void
++	{
++		if (leaving)
++			return;
++		leaving = true;
++
++		// The engine transition lasts 0.5s, fade the sound out over the same time.
++		if (splashSound != null && splashSound.playing)
++			splashSound.fadeOut(0.5);
++
++		MusicBeatState.switchState(new TitleState());
++	}
++}
+diff -ruN orig/states/FreeplayState.hx work/states/FreeplayState.hx
+--- orig/states/FreeplayState.hx	2026-11-05 21:15:22.000000000 +0000
++++ work/states/FreeplayState.hx	2026-11-06 02:47:33.028726414 +0000
+@@ -1,10 +1,38 @@
++//   _____      _           _       ______             _
++//  / ____|    | |         | |     |  ____|           (_)
++// | |     ___ | |     __ _| |__   | |__   _ __   __ _ _ _ __   ___
++// | |    / _ \| |    / _` | '_ \  |  __| | '_ \ / _` | | '_ \ / _ \
++// | |___| (_) | |___| (_| | |_) | | |____| | | | (_| | | | | |  __/
++//  \_____\___/|______\__,_|_.__/  |______|_| |_|\__, |_|_| |_|\___|
++//                                                __/ |
++//                                               |___/
++//
++//   ____    ___ __ ___  __     _       _   _                 _      ___ ___  ___
++//  / /\ \  |_  )  \_  )/ /    /_\  _ _| |_| |_  _ _ ___ _ __(_)__  | _ \ _ )/ __|
++// | / _| |  / / () / // _ \  / _ \| ' \  _| ' \| '_/ _ \ '_ \ / _| |  _/ _ \ (__ _
++// | \__| | /___\__/___\___/ /_/ \_\_||_\__|_||_|_| \___/ .__/_\__| |_| |___/\___( )
++//  \_\/_/                                              |_|                      |/
++//
++//   ___                   _   ___   __       ___ _   _   _                    _
++//  / _ \ _ __  ___ _ _   /_\ |_ _| / _|___  | __| | /_\ | |__  ___  __ _ __ _| |_ ___
++// | (_) | '_ \/ -_) ' \ / _ \ | |  > _|_ _| | _|| |/ _ \| '_ \/ _ \/ _` / _` |  _/ _ \
++//  \___/| .__/\___|_||_/_/ \_\___| \_____|  |___|_/_/ \_\_.__/\___/\__, \__,_|\__\___/
++//       |_|                                                        |___/
++// © 2026 Anthropic PBC, OpenAI & ElAbogato
++//
++// ---------------------------------------------------------------------------------------------
++//  CoLab Engine: this file was modified. Written by Claude.
++//  This is a Certified Claude Code. Spec by ChatGPT, supervision by a human of questionable judgment.
++//  What changed: centered song list and score panel; character icons no longer drawn (metadata untouched).
++//  Fase 647 terminada.
++// ---------------------------------------------------------------------------------------------
+ package states;
+ 
+ import backend.WeekData;
+ import backend.Highscore;
+ import backend.Song;
+ 
+-import objects.HealthIcon;
++// CoLab Engine: HealthIcon import removed, Freeplay no longer draws character icons.
+ import objects.MusicPlayer;
+ 
+ import options.GameplayChangersSubstate;
+@@ -38,8 +66,6 @@
+ 	private var grpSongs:FlxTypedGroup<Alphabet>;
+ 	private var curPlaying:Bool = false;
+ 
+-	private var iconArray:Array<HealthIcon> = [];
+-
+ 	var bg:FlxSprite;
+ 	var intendedColor:Int;
+ 
+@@ -117,21 +143,20 @@
+ 			songText.targetY = i;
+ 			grpSongs.add(songText);
+ 
++			// CoLab Engine: remember the unscaled width, the group width is not reliable right after scaling.
++			var fullWidth:Float = songText.width;
+ 			songText.scaleX = Math.min(1, 980 / songText.width);
+ 			songText.snapToPosition();
+ 
+-			Mods.currentModDirectory = songs[i].folder;
+-			var icon:HealthIcon = new HealthIcon(songs[i].songCharacter);
+-			icon.sprTracker = songText;
++			// CoLab Engine: no more diagonal cascade. Every name sits on the horizontal center of the screen.
++			songText.distancePerItem.x = 0;
++			songText.startPosition.x = (FlxG.width - fullWidth * songText.scaleX) / 2;
++
++			// CoLab Engine: the HealthIcon that used to be created here is gone. songs[i].songCharacter is still stored in
++			// SongMetadata (the Reset Score substate needs it), only the visual representation was removed.
+ 
+-			
+ 			// too laggy with a lot of songs, so i had to recode the logic for it
+ 			songText.visible = songText.active = songText.isMenuItem = false;
+-			icon.visible = icon.active = false;
+-
+-			// using a FlxGroup is too much fuss!
+-			iconArray.push(icon);
+-			add(icon);
+ 
+ 			// songText.x += 40;
+ 			// DONT PUT X IN THE FIRST PARAMETER OF new ALPHABET() !!
+@@ -529,13 +554,10 @@
+ 
+ 		for (num => item in grpSongs.members)
+ 		{
+-			var icon:HealthIcon = iconArray[num];
+ 			item.alpha = 0.6;
+-			icon.alpha = 0.6;
+ 			if (item.targetY == curSelected)
+ 			{
+ 				item.alpha = 1;
+-				icon.alpha = 1;
+ 			}
+ 		}
+ 		
+@@ -563,9 +585,10 @@
+ 
+ 	private function positionHighscore()
+ 	{
+-		scoreText.x = FlxG.width - scoreText.width - 6;
+-		scoreBG.scale.x = FlxG.width - scoreText.x + 6;
+-		scoreBG.x = FlxG.width - (scoreBG.scale.x / 2);
++		// CoLab Engine: the score panel used to be glued to the top right corner, now it is centered at the top.
++		scoreText.x = (FlxG.width - scoreText.width) / 2;
++		scoreBG.scale.x = scoreText.width + 12;
++		scoreBG.x = (FlxG.width - scoreBG.width) / 2;
+ 		diffText.x = Std.int(scoreBG.x + (scoreBG.width / 2));
+ 		diffText.x -= diffText.width / 2;
+ 	}
+@@ -578,7 +601,6 @@
+ 		for (i in _lastVisibles)
+ 		{
+ 			grpSongs.members[i].visible = grpSongs.members[i].active = false;
+-			iconArray[i].visible = iconArray[i].active = false;
+ 		}
+ 		_lastVisibles = [];
+ 
+@@ -590,9 +612,6 @@
+ 			item.visible = item.active = true;
+ 			item.x = ((item.targetY - lerpSelected) * item.distancePerItem.x) + item.startPosition.x;
+ 			item.y = ((item.targetY - lerpSelected) * 1.3 * item.distancePerItem.y) + item.startPosition.y;
+-
+-			var icon:HealthIcon = iconArray[i];
+-			icon.visible = icon.active = true;
+ 			_lastVisibles.push(i);
+ 		}
+ 	}
+diff -ruN orig/states/MainMenuState.hx work/states/MainMenuState.hx
+--- orig/states/MainMenuState.hx	2026-11-05 21:15:22.000000000 +0000
++++ work/states/MainMenuState.hx	2026-11-06 02:47:33.028178776 +0000
+@@ -1,3 +1,31 @@
++//   _____      _           _       ______             _
++//  / ____|    | |         | |     |  ____|           (_)
++// | |     ___ | |     __ _| |__   | |__   _ __   __ _ _ _ __   ___
++// | |    / _ \| |    / _` | '_ \  |  __| | '_ \ / _` | | '_ \ / _ \
++// | |___| (_) | |___| (_| | |_) | | |____| | | | (_| | | | | |  __/
++//  \_____\___/|______\__,_|_.__/  |______|_| |_|\__, |_|_| |_|\___|
++//                                                __/ |
++//                                               |___/
++//
++//   ____    ___ __ ___  __     _       _   _                 _      ___ ___  ___
++//  / /\ \  |_  )  \_  )/ /    /_\  _ _| |_| |_  _ _ ___ _ __(_)__  | _ \ _ )/ __|
++// | / _| |  / / () / // _ \  / _ \| ' \  _| ' \| '_/ _ \ '_ \ / _| |  _/ _ \ (__ _
++// | \__| | /___\__/___\___/ /_/ \_\_||_\__|_||_|_| \___/ .__/_\__| |_| |___/\___( )
++//  \_\/_/                                              |_|                      |/
++//
++//   ___                   _   ___   __       ___ _   _   _                    _
++//  / _ \ _ __  ___ _ _   /_\ |_ _| / _|___  | __| | /_\ | |__  ___  __ _ __ _| |_ ___
++// | (_) | '_ \/ -_) ' \ / _ \ | |  > _|_ _| | _|| |/ _ \| '_ \/ _ \/ _` / _` |  _/ _ \
++//  \___/| .__/\___|_||_/_/ \_\___| \_____|  |___|_/_/ \_\_.__/\___/\__, \__,_|\__\___/
++//       |_|                                                        |___/
++// © 2026 Anthropic PBC, OpenAI & ElAbogato
++//
++// ---------------------------------------------------------------------------------------------
++//  CoLab Engine: this file was modified. Written by Claude.
++//  This is a Certified Claude Code. Spec by ChatGPT, supervision by a human of questionable judgment.
++//  What changed: main options aligned left; Options + Achievements stacked in the top right corner; version label.
++//  Fase 927 terminada.
++// ---------------------------------------------------------------------------------------------
+ package states;
+ 
+ import flixel.FlxObject;
+@@ -19,6 +47,10 @@
+ 	public static var curColumn:MainMenuColumn = CENTER;
+ 	var allowMouse:Bool = true; //Turn this off to block mouse movement in menus
+ 
++	// CoLab Engine: distance from the left edge of the screen to the main options.
++	// Also used as the margin of the top right corner stack, because symmetry is the only thing Claude is good at.
++	static inline var MENU_MARGIN:Float = 60;
++
+ 	var menuItems:FlxTypedGroup<FlxSprite>;
+ 	var leftItem:FlxSprite;
+ 	var rightItem:FlxSprite;
+@@ -83,18 +115,26 @@
+ 		{
+ 			var item:FlxSprite = createMenuItem(option, 0, (num * 140) + 90);
+ 			item.y += (4 - optionShit.length) * 70; // Offsets for when you have anything other than 4 items
+-			item.screenCenter(X);
++			// CoLab Engine: was item.screenCenter(X). The main options now hug the left side of the screen.
++			item.x = MENU_MARGIN;
+ 		}
+ 
+-		if (leftOption != null)
+-			leftItem = createMenuItem(leftOption, 60, 490);
++		// CoLab Engine: Options (top) and Achievements (right below it) are stacked in the top right corner,
++		// sharing the same right edge. Position only: leftItem/rightItem and their keyboard/mouse logic are untouched.
++		var cornerY:Float = 30;
+ 		if (rightOption != null)
+ 		{
+-			rightItem = createMenuItem(rightOption, FlxG.width - 60, 490);
++			rightItem = createMenuItem(rightOption, FlxG.width - MENU_MARGIN, cornerY);
+ 			rightItem.x -= rightItem.width;
++			cornerY += rightItem.height + 20;
++		}
++		if (leftOption != null)
++		{
++			leftItem = createMenuItem(leftOption, FlxG.width - MENU_MARGIN, cornerY);
++			leftItem.x -= leftItem.width;
+ 		}
+ 
+-		var psychVer:FlxText = new FlxText(12, FlxG.height - 44, 0, "Psych Engine v" + psychEngineVersion, 12);
++		var psychVer:FlxText = new FlxText(12, FlxG.height - 44, 0, "CoLab Engine (based on Psych Engine v" + psychEngineVersion + ")", 12); // CoLab Engine: label only, psychEngineVersion itself is untouched
+ 		psychVer.scrollFactor.set();
+ 		psychVer.setFormat(Paths.font("vcr.ttf"), 16, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+ 		add(psychVer);
+diff -ruN orig/states/StoryMenuState.hx work/states/StoryMenuState.hx
+--- orig/states/StoryMenuState.hx	2026-11-05 21:15:22.000000000 +0000
++++ work/states/StoryMenuState.hx	2026-11-06 02:47:33.028458995 +0000
+@@ -1,3 +1,31 @@
++//   _____      _           _       ______             _
++//  / ____|    | |         | |     |  ____|           (_)
++// | |     ___ | |     __ _| |__   | |__   _ __   __ _ _ _ __   ___
++// | |    / _ \| |    / _` | '_ \  |  __| | '_ \ / _` | | '_ \ / _ \
++// | |___| (_) | |___| (_| | |_) | | |____| | | | (_| | | | | |  __/
++//  \_____\___/|______\__,_|_.__/  |______|_| |_|\__, |_|_| |_|\___|
++//                                                __/ |
++//                                               |___/
++//
++//   ____    ___ __ ___  __     _       _   _                 _      ___ ___  ___
++//  / /\ \  |_  )  \_  )/ /    /_\  _ _| |_| |_  _ _ ___ _ __(_)__  | _ \ _ )/ __|
++// | / _| |  / / () / // _ \  / _ \| ' \  _| ' \| '_/ _ \ '_ \ / _| |  _/ _ \ (__ _
++// | \__| | /___\__/___\___/ /_/ \_\_||_\__|_||_|_| \___/ .__/_\__| |_| |___/\___( )
++//  \_\/_/                                              |_|                      |/
++//
++//   ___                   _   ___   __       ___ _   _   _                    _
++//  / _ \ _ __  ___ _ _   /_\ |_ _| / _|___  | __| | /_\ | |__  ___  __ _ __ _| |_ ___
++// | (_) | '_ \/ -_) ' \ / _ \ | |  > _|_ _| | _|| |/ _ \| '_ \/ _ \/ _` / _` |  _/ _ \
++//  \___/| .__/\___|_||_/_/ \_\___| \_____|  |___|_/_/ \_\_.__/\___/\__, \__,_|\__\___/
++//       |_|                                                        |___/
++// © 2026 Anthropic PBC, OpenAI & ElAbogato
++//
++// ---------------------------------------------------------------------------------------------
++//  CoLab Engine: this file was modified. Written by Claude.
++//  This is a Certified Claude Code. Spec by ChatGPT, supervision by a human of questionable judgment.
++//  What changed: weeks aligned left, difficulty selector moved into the top black bar (sized to fit it), controls untouched.
++//  Fase 626 terminada.
++// ---------------------------------------------------------------------------------------------
+ package states;
+ 
+ import backend.WeekData;
+@@ -43,6 +71,13 @@
+ 
+ 	var loadedWeeks:Array<WeekData> = [];
+ 
++	// CoLab Engine: left edge of the week list. It is NOT the far left of the screen on purpose: the track list
++	// (which must stay where it was) lives in the bottom left corner, so the weeks start right after that column.
++	static inline var WEEK_LIST_X:Float = 346;
++
++	// CoLab Engine: horizontal distance between the two difficulty arrows, same value the original layout used.
++	static inline var ARROW_SPACING:Float = 376;
++
+ 	override function create()
+ 	{
+ 		Paths.clearStoredMemory();
+@@ -83,8 +118,9 @@
+ 		grpWeekText = new FlxTypedGroup<MenuItem>();
+ 		add(grpWeekText);
+ 
+-		var blackBarThingie:FlxSprite = new FlxSprite().makeGraphic(FlxG.width, 56, FlxColor.BLACK);
+-		add(blackBarThingie);
++		// CoLab Engine: the bar is now a 1x1 sprite scaled in layoutTopBar() once we know how tall the difficulty graphics are.
++		// It is added further down, after the yellow band, so that it also draws over the selector area.
++		var blackBarThingie:FlxSprite = new FlxSprite().makeGraphic(1, 1, FlxColor.BLACK);
+ 
+ 		grpWeekCharacters = new FlxTypedGroup<MenuCharacter>();
+ 
+@@ -108,7 +144,8 @@
+ 				itemTargetY += Math.max(weekThing.height, 110) + 10;
+ 				grpWeekText.add(weekThing);
+ 
+-				weekThing.screenCenter(X);
++				// CoLab Engine: was weekThing.screenCenter(X). Selection/flashing animations are untouched.
++				weekThing.x = WEEK_LIST_X;
+ 				// weekThing.updateHitbox();
+ 
+ 				// Needs an offset thingie
+@@ -136,9 +173,9 @@
+ 		}
+ 
+ 		difficultySelectors = new FlxGroup();
+-		add(difficultySelectors);
+ 
+-		leftArrow = new FlxSprite(850, grpWeekText.members[0].y + 10);
++		// CoLab Engine: arrows and difficulty sprite are positioned in layoutTopBar(), not here.
++		leftArrow = new FlxSprite();
+ 		leftArrow.antialiasing = ClientPrefs.data.antialiasing;
+ 		leftArrow.frames = ui_tex;
+ 		leftArrow.animation.addByPrefix('idle', "arrow left");
+@@ -153,11 +190,11 @@
+ 		}
+ 		curDifficulty = Math.round(Math.max(0, Difficulty.defaultList.indexOf(lastDifficultyName)));
+ 		
+-		sprDifficulty = new FlxSprite(0, leftArrow.y);
++		sprDifficulty = new FlxSprite();
+ 		sprDifficulty.antialiasing = ClientPrefs.data.antialiasing;
+ 		difficultySelectors.add(sprDifficulty);
+ 
+-		rightArrow = new FlxSprite(leftArrow.x + 376, leftArrow.y);
++		rightArrow = new FlxSprite();
+ 		rightArrow.antialiasing = ClientPrefs.data.antialiasing;
+ 		rightArrow.frames = ui_tex;
+ 		rightArrow.animation.addByPrefix('idle', 'arrow right');
+@@ -165,8 +202,13 @@
+ 		rightArrow.animation.play('idle');
+ 		difficultySelectors.add(rightArrow);
+ 
++		layoutTopBar(blackBarThingie);
++
+ 		add(bgYellow);
+ 		add(bgSprite);
++		// CoLab Engine: black bar + difficulty selector now live at the top of the screen, above the band.
++		add(blackBarThingie);
++		add(difficultySelectors);
+ 		add(grpWeekCharacters);
+ 
+ 		var tracksSprite:FlxSprite = new FlxSprite(FlxG.width * 0.07 + 100, bgSprite.y + 425).loadGraphic(Paths.image('Menu_Tracks'));
+@@ -390,7 +432,8 @@
+ 			sprDifficulty.x = leftArrow.x + 60;
+ 			sprDifficulty.x += (308 - sprDifficulty.width) / 3;
+ 			sprDifficulty.alpha = 0;
+-			sprDifficulty.y = leftArrow.y - sprDifficulty.height + 50;
++			// CoLab Engine: vertically centered with the arrows (they are centered in the top bar). Starts 30px higher, the tween below drops it in place.
++			sprDifficulty.y = leftArrow.y + (leftArrow.frameHeight - sprDifficulty.height) / 2 - 30;
+ 
+ 			FlxTween.cancelTweensOf(sprDifficulty);
+ 			FlxTween.tween(sprDifficulty, {y: sprDifficulty.y + 30, alpha: 1}, 0.07);
+@@ -455,6 +498,40 @@
+ 		updateText();
+ 	}
+ 
++	/**
++	 * CoLab Engine: sizes the top black bar and places the difficulty selector inside it.
++	 *
++	 * The bar is at least as tall as the original one (56px) and grows if any difficulty graphic of any loaded week
++	 * (or the arrows) is taller than that, so the original graphics are never cropped or scaled.
++	 * Written by Claude. Measured by Claude. Trust issues handled by Claude.
++	 */
++	function layoutTopBar(bar:FlxSprite):Void
++	{
++		var tallest:Float = Math.max(leftArrow.frameHeight, rightArrow.frameHeight);
++		for (week in loadedWeeks)
++		{
++			WeekData.setDirectoryFromWeek(week);
++			Difficulty.loadFromWeek(week);
++			for (diff in Difficulty.list)
++			{
++				var graphic:FlxGraphic = Paths.image('menudifficulties/' + Paths.formatToSongPath(diff));
++				if (graphic != null)
++					tallest = Math.max(tallest, graphic.height);
++			}
++		}
++		// Put the mod directory back the way create() had it before the measuring loop.
++		WeekData.setDirectoryFromWeek(loadedWeeks[0]);
++
++		var barHeight:Float = Math.max(56, tallest + 16);
++		bar.scale.set(FlxG.width, barHeight);
++		bar.updateHitbox();
++
++		leftArrow.x = (FlxG.width - (ARROW_SPACING + rightArrow.frameWidth)) / 2;
++		leftArrow.y = (barHeight - leftArrow.frameHeight) / 2;
++		rightArrow.x = leftArrow.x + ARROW_SPACING;
++		rightArrow.y = leftArrow.y;
++	}
++
+ 	function weekIsLocked(name:String):Bool {
+ 		var leWeek:WeekData = WeekData.weeksLoaded.get(name);
+ 		return (!leWeek.startUnlocked && leWeek.weekBefore.length > 0 && (!weekCompleted.exists(leWeek.weekBefore) || !weekCompleted.get(leWeek.weekBefore)));
+diff -ruN orig/states/editors/MasterEditorMenu.hx work/states/editors/MasterEditorMenu.hx
+--- orig/states/editors/MasterEditorMenu.hx	2026-11-05 21:15:22.000000000 +0000
++++ work/states/editors/MasterEditorMenu.hx	2026-11-06 02:47:33.028892760 +0000
+@@ -1,3 +1,31 @@
++//   _____      _           _       ______             _
++//  / ____|    | |         | |     |  ____|           (_)
++// | |     ___ | |     __ _| |__   | |__   _ __   __ _ _ _ __   ___
++// | |    / _ \| |    / _` | '_ \  |  __| | '_ \ / _` | | '_ \ / _ \
++// | |___| (_) | |___| (_| | |_) | | |____| | | | (_| | | | | |  __/
++//  \_____\___/|______\__,_|_.__/  |______|_| |_|\__, |_|_| |_|\___|
++//                                                __/ |
++//                                               |___/
++//
++//   ____    ___ __ ___  __     _       _   _                 _      ___ ___  ___
++//  / /\ \  |_  )  \_  )/ /    /_\  _ _| |_| |_  _ _ ___ _ __(_)__  | _ \ _ )/ __|
++// | / _| |  / / () / // _ \  / _ \| ' \  _| ' \| '_/ _ \ '_ \ / _| |  _/ _ \ (__ _
++// | \__| | /___\__/___\___/ /_/ \_\_||_\__|_||_|_| \___/ .__/_\__| |_| |___/\___( )
++//  \_\/_/                                              |_|                      |/
++//
++//   ___                   _   ___   __       ___ _   _   _                    _
++//  / _ \ _ __  ___ _ _   /_\ |_ _| / _|___  | __| | /_\ | |__  ___  __ _ __ _| |_ ___
++// | (_) | '_ \/ -_) ' \ / _ \ | |  > _|_ _| | _|| |/ _ \| '_ \/ _ \/ _` / _` |  _/ _ \
++//  \___/| .__/\___|_||_/_/ \_\___| \_____|  |___|_/_/ \_\_.__/\___/\__, \__,_|\__\___/
++//       |_|                                                        |___/
++// © 2026 Anthropic PBC, OpenAI & ElAbogato
++//
++// ---------------------------------------------------------------------------------------------
++//  CoLab Engine: this file was modified. Written by Claude.
++//  This is a Certified Claude Code. Spec by ChatGPT, supervision by a human of questionable judgment.
++//  What changed: every option (and the mod directory bar) aligned to the left, no diagonal cascade.
++//  Fase 580 terminada.
++// ---------------------------------------------------------------------------------------------
+ package states.editors;
+ 
+ import backend.WeekData;
+@@ -44,9 +72,12 @@
+ 
+ 		for (i in 0...options.length)
+ 		{
+-			var leText:Alphabet = new Alphabet(90, 320, options[i], true);
++			// CoLab Engine: same left margin as the Main Menu (60). distancePerItem.x = 0 removes the diagonal cascade,
++			// so ALL options share the same left edge. No exceptions, as the spec (and ChatGPT) demanded.
++			var leText:Alphabet = new Alphabet(60, 320, options[i], true);
+ 			leText.isMenuItem = true;
+ 			leText.targetY = i;
++			leText.distancePerItem.x = 0;
+ 			grpTexts.add(leText);
+ 			leText.snapToPosition();
+ 		}
+@@ -56,8 +87,9 @@
+ 		textBG.alpha = 0.6;
+ 		add(textBG);
+ 
+-		directoryTxt = new FlxText(textBG.x, textBG.y + 4, FlxG.width, '', 32);
+-		directoryTxt.setFormat(Paths.font("vcr.ttf"), 32, FlxColor.WHITE, CENTER);
++		// CoLab Engine: the mod directory bar text is left aligned too (was CENTER), because the spec allows no exceptions.
++		directoryTxt = new FlxText(textBG.x + 20, textBG.y + 4, FlxG.width - 20, '', 32);
++		directoryTxt.setFormat(Paths.font("vcr.ttf"), 32, FlxColor.WHITE, LEFT);
+ 		directoryTxt.scrollFactor.set();
+ 		add(directoryTxt);
+ 		
