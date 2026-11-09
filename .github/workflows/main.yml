@@ -1,108 +1,87 @@
-# This is a basic workflow to help you get started with Actions
-
 name: Build
 
-
-# Controls when the action will run.
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
   push:
     branches: [ main, experimental ]
   pull_request:
     branches: [ main, experimental ]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+env:
+  APP_VERSION: 4.0.0
+
 jobs:
-  # This workflow contains a single job called "build"
-  buildLinux:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    # A stuck step used to run until GitHub killed it after 6 hours.
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux
+            os: ubuntu-latest
+            target: linux
+            artifact: linuxBuild
+            output: export/release/linux/bin
+          - name: Windows
+            os: windows-latest
+            target: windows
+            artifact: windowsBuild
+            output: export/release/windows/bin
+          - name: macOS
+            os: macos-15
+            target: mac
+            artifact: macBuild
+            output: export/release/macos/bin
+    # Every run step uses bash (Git Bash on Windows) so the same commands work everywhere.
+    defaults:
+      run:
+        shell: bash
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4.1.7
 
-      - uses: krdlab/setup-haxe@master
+      - uses: krdlab/setup-haxe@v2.1.1
         with:
           haxe-version: 4.3.4
-      # Runs a set of commands using the runners shell
-      - name: Install Haxelib
+
+      - name: Install Linux system packages
+        if: runner.os == 'Linux'
         run: |
-          sudo apt-get install libvlc-dev
-          sudo apt-get install libvlccore-dev
-          haxelib setup ~/haxelib
-          haxelib install hxcpp > /dev/null --quiet
-          chmod +x ./setup/unix.sh
-          sh ./setup/unix.sh
-      - name: Skip SScript setup mode
-        run: echo 'oy9:showMacroty8:loopCosti25y10:includeAllfg' >> ~/settings.cocoa
+          sudo apt-get update
+          sudo apt-get install -y libvlc-dev libvlccore-dev
+
+      - name: Cache haxelib
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/haxelib
+          key: haxelib-${{ runner.os }}-${{ hashFiles('setup/unix.sh', 'setup/windows.bat') }}
+
+      - name: Install haxelibs
+        run: |
+          mkdir -p "${{ runner.temp }}/haxelib"
+          haxelib setup "${{ runner.temp }}/haxelib"
+          haxelib install hxcpp --always
+
+          # Reuse the project's own setup script so the pinned versions never go out of sync,
+          # but run only its haxelib lines: the originals end with `pause` (windows.bat), `cd ..`
+          # and `mkdir ~/haxelib`, and ask questions, which hangs or breaks a CI run.
+          if [ "$RUNNER_OS" = "Windows" ]; then SCRIPT=setup/windows.bat; else SCRIPT=setup/unix.sh; fi
+          tr -d '\r' < "$SCRIPT" | grep -E '^haxelib (install|set|git) ' | sed -E '/^haxelib set /! s/$/ --always/' > "$RUNNER_TEMP/haxelibs.sh"
+          cat "$RUNNER_TEMP/haxelibs.sh"
+          bash -e "$RUNNER_TEMP/haxelibs.sh"
+          haxelib list
+
       - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
+        run: echo "${{ github.run_id }}" > VERSION
+
       - name: Compile
-        run: haxelib run lime build Project.xml linux --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
+        run: haxelib run lime build ${{ matrix.target }} --app-version="${APP_VERSION}-${{ github.run_id }}" -D officialBuild
+
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
         with:
-          name: linuxBuild
-          path: 'export/release/linux/bin'
-  buildWindows:
-    runs-on: windows-latest
-
-    steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4.1.7
-
-      - uses: krdlab/setup-haxe@master
-        with:
-          haxe-version: 4.3.4
-      # Runs a set of commands using the runners shell
-      - name: Install Haxelib
-        run: |
-          haxelib setup C:/haxelib
-          haxelib install hxcpp > /dev/null --quiet
-          .\"setup/windows.bat"
-        shell: cmd
-      - name: Skip SScript setup mode
-        run: echo 'oy9:showMacroty8:loopCosti25y10:includeAllfg' >> %USERPROFILE%/settings.cocoa
-        shell: cmd
-      - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
-      - name: Compile
-        run: haxelib run lime build windows --app-version="4.0.0-${{ github.run_id}}"  -D officialBuild
-      - name: Publish Artifact
-        uses: actions/upload-artifact@v4.3.4
-        with:
-          name: windowsBuild
-          path: export/release/windows/bin
-  buildMac:
-    runs-on: macos-15
-
-    steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4.1.7
-
-      - uses: krdlab/setup-haxe@master
-        with:
-          haxe-version: 4.3.4
-      # Runs a set of commands using the runners shell
-      - name: Install Haxelib
-        run: |
-          haxelib setup ~/haxelib
-          haxelib install hxcpp > /dev/null --quiet
-          chmod +x ./setup/unix.sh
-          sh ./setup/unix.sh
-      - name: Skip SScript setup mode
-        run: echo 'oy9:showMacroty8:loopCosti25y10:includeAllfg' >> ~/settings.cocoa
-      - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
-      - name: Compile
-        run: haxelib run lime build mac --app-version="4.0.0-${{ github.run_id}}"  -D officialBuild
-      - name: Publish Artifact
-        uses: actions/upload-artifact@v4.3.4
-        with:
-          name: macBuild
-          path: export/release/macos/bin
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.output }}
